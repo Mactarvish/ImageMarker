@@ -6,15 +6,6 @@ Widget::Widget(QWidget *parent) :
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
-    /*
-    delete ui->pushButton;
-    ui->pushButton = new MyButton(this);
-    ui->pushButton->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    ui->pushButton->setFocusPolicy(Qt::NoFocus);
-    ui->horizontalLayout->addWidget(ui->pushButton);
-    ui->pushButton->setMouseTracking(true);
-    */
-
     ui->label_big->setMouseTracking(true);
     //setMouseTracking(true);
     ui->label_big->installEventFilter(this);
@@ -23,11 +14,11 @@ Widget::Widget(QWidget *parent) :
     painter = new QPainter();
     fileNames_ap = new QList<QString>();
 
-    rootPath = new QString("/home/hdl2/Desktop/Circle_Images/");
+    //rootPath = new QString("/home/hdl2/Desktop/Circle_Images/");
     QDir root = QDir("small_images/");
     QFileInfoList list = root.entryInfoList();
     points.resize(0);
-    coordiantes.resize(0);
+    coordinates.resize(0);
 
     imageChanged = false;
 
@@ -41,6 +32,7 @@ Widget::Widget(QWidget *parent) :
         }
     }
     ChangeImages(0);
+    currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
     ui->lineEdit->setText((*fileNames_ap)[0]);
     /*
     ui->label_big->setPixmap(image->copy(279, 115, 815, 597));
@@ -82,6 +74,8 @@ void Widget::keyPressEvent(QKeyEvent *event)
             image_index++;
         }
         ChangeImages(image_index);
+        delete currentPixmap;
+        currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
     }
     if (event->key() == Qt::Key_Left)
     {
@@ -95,6 +89,8 @@ void Widget::keyPressEvent(QKeyEvent *event)
         }
         qDebug() << image_index;
         ChangeImages(image_index);
+        delete currentPixmap;
+        currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
     }
     if (event->key() == Qt::Key_Enter)
     {
@@ -140,16 +136,17 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
     if (target == ui->label_big)
     {
         static bool drawFinish = true;
-        static QPixmap currentPixmap = *(ui->label_big->pixmap());
+        //currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
         static QPoint beginPoint = QPoint();
         if (event->type() == QEvent::MouseMove)
         {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-            qDebug() << mouseEvent->pos();
+            //qDebug() << mouseEvent->pos();
             //QPixmap* pixmap = const_cast<QPixmap*>(ui->label_big->pixmap());
-            QPixmap drawedPixmap = currentPixmap;
+            QPixmap drawedPixmap = *currentPixmap;
             if (!drawFinish)
             {
+                qDebug() << "Keep drawing...";
                 painter->begin(&drawedPixmap);
                 painter->setPen(QPen(Qt::red, 2, Qt::SolidLine));
                 painter->drawRect(QRect(beginPoint, mouseEvent->pos()));
@@ -159,9 +156,11 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
             }
             else
             {
+                qDebug() << "Drawing Finished.";
+                /*
                 painter->begin(&drawedPixmap);
                 painter->setPen(QPen(Qt::red, 2, Qt::SolidLine));
-                painter->setBackground(currentPixmap);
+                painter->setBackground(*currentPixmap);
                 painter->eraseRect(30, 30, 310, 310);
                 //qDebug() << painter->isActive();
                 painter->end();
@@ -169,6 +168,7 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
                 ui->label_big->setPixmap(drawedPixmap);
                 ui->label_big->show();
                 //qDebug() << "Drawing is over.";
+                */
             }
             ui->label_big->setPixmap(drawedPixmap);
         }
@@ -182,13 +182,15 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
             }
             HandleLabels_Circle(mouseEvent->pos(), 2);
             //HandleLabels_Rect(mouseEvent->pos());
-            currentPixmap = *(ui->label_big->pixmap());
-            qDebug() << currentPixmap;
+            delete currentPixmap;
+            currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
+            //currentPixmap = ui->label_big->pixmap();
+            //qDebug() << currentPixmap;
         }
     }
     else
     {
-        return QWidget::event(event);
+        //return QWidget::event(event);
     }
 }
 
@@ -220,7 +222,7 @@ void Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
     QString coordinate = Point2Str(pos);
     points.append(coordinate);
     QLabel* label = new QLabel("<h5><font size=3 color=red>" + coordinate + "</font></h5>", ui->label_big);
-    coordiantes.append(label);
+    coordinates.append(label);
     label->setMouseTracking(true);
     label->adjustSize();
     label->move(pos);
@@ -232,19 +234,19 @@ void Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
         NoteLabels();
         points.clear();
         // Simulate right key pressing
-        QApplication::sendEvent(this, new QKeyEvent(QEvent::KeyPress, Qt::Key_Right, 0));
+        //QApplication::sendEvent(this, new QKeyEvent(QEvent::KeyPress, Qt::Key_Right, 0));
 
-        foreach(QLabel* label, coordiantes)
+        foreach(QLabel* label, coordinates)
         {
             delete label;
         }
-        coordiantes.clear();;
+        coordinates.clear();;
     }
 }
 
 void Widget::NoteLabels()
 {
-    //QString fileName = "coordiantes.txt";
+    //QString fileName = "coordinates.txt";
     QString fileName = "rectangle.txt";
     QFile file(fileName);
     file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);

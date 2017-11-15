@@ -35,8 +35,10 @@ private:
     QList<QString>* fileNames_ap;
     QString* rootPath;
     QVector<QString> points;
-    QVector<QLabel*> coordiantes;
+    QVector<QLabel*> coordinates;
     QPainter* painter;
+    const QPixmap* currentPixmap;
+    int currentImageIndex;
 
     bool imageChanged;
 
