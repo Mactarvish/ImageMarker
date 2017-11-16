@@ -24,13 +24,14 @@ Widget::Widget(QWidget *parent) :
 
     for (int i = 2; i < list.length(); i++)
     {
-        qDebug() << list[i].fileName();
+        //qDebug() << list[i].fileName();
         if (list[i].fileName().contains(".jpg"))
         {
             //qDebug() << (*fileNames_ap)[i - 2];
             fileNames_ap->append(root.absolutePath() + "/" + list[i].fileName());
         }
     }
+    qDebug() << fileNames_ap->size();
     ChangeImages(0);
     currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
     ui->lineEdit->setText((*fileNames_ap)[0]);
@@ -136,39 +137,22 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
     if (target == ui->label_big)
     {
         static bool drawFinish = true;
-        //currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
         static QPoint beginPoint = QPoint();
+        QPixmap drawedPixmap = *currentPixmap;
         if (event->type() == QEvent::MouseMove)
         {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-            //qDebug() << mouseEvent->pos();
-            //QPixmap* pixmap = const_cast<QPixmap*>(ui->label_big->pixmap());
-            QPixmap drawedPixmap = *currentPixmap;
             if (!drawFinish)
             {
                 qDebug() << "Keep drawing...";
                 painter->begin(&drawedPixmap);
                 painter->setPen(QPen(Qt::red, 2, Qt::SolidLine));
                 painter->drawRect(QRect(beginPoint, mouseEvent->pos()));
-                //qDebug() << painter->isActive();
                 painter->end();
-                //ui->label_big->hide();
             }
             else
             {
                 qDebug() << "Drawing Finished.";
-                /*
-                painter->begin(&drawedPixmap);
-                painter->setPen(QPen(Qt::red, 2, Qt::SolidLine));
-                painter->setBackground(*currentPixmap);
-                painter->eraseRect(30, 30, 310, 310);
-                //qDebug() << painter->isActive();
-                painter->end();
-                //ui->label_big->hide();
-                ui->label_big->setPixmap(drawedPixmap);
-                ui->label_big->show();
-                //qDebug() << "Drawing is over.";
-                */
             }
             ui->label_big->setPixmap(drawedPixmap);
         }
@@ -178,20 +162,23 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
             drawFinish = !drawFinish;
             if (!drawFinish)
             {
+                //drawedPixmap = QPixmap(*(ui->label_big->pixmap()));
                 beginPoint = mouseEvent->pos();
             }
-            HandleLabels_Circle(mouseEvent->pos(), 2);
+            // If all points in current image have been noted, change to next image.
+            if (HandleLabels_Circle(mouseEvent->pos(), 2))
+            {
+                // Simulate right key pressing
+                QApplication::sendEvent(this, new QKeyEvent(QEvent::KeyPress, Qt::Key_Right, 0));
+            }
             //HandleLabels_Rect(mouseEvent->pos());
-            delete currentPixmap;
-            currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
+            //delete currentPixmap;
+            //currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
             //currentPixmap = ui->label_big->pixmap();
             //qDebug() << currentPixmap;
         }
     }
-    else
-    {
-        //return QWidget::event(event);
-    }
+    return QWidget::eventFilter(target, event);
 }
 
 bool Widget::CheckIfMarked(const QString &fileName) const
@@ -217,7 +204,8 @@ void Widget::ChangeImages(const int &index)
     ui->label_big->resize(bigImage.size());
 }
 
-void Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
+// If numPos has been arrived, return true, otherwise return false.
+bool Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
 {
     QString coordinate = Point2Str(pos);
     points.append(coordinate);
@@ -233,14 +221,16 @@ void Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
     {
         NoteLabels();
         points.clear();
-        // Simulate right key pressing
-        //QApplication::sendEvent(this, new QKeyEvent(QEvent::KeyPress, Qt::Key_Right, 0));
-
         foreach(QLabel* label, coordinates)
         {
             delete label;
         }
-        coordinates.clear();;
+        coordinates.clear();
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 

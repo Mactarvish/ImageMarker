@@ -45,7 +45,7 @@ private:
     void ShowAllfiles();
     bool CheckIfMarked(const QString& fileName) const;
     void ChangeImages(const int& index);
-    void HandleLabels_Circle(const QPoint &pos, const int& numPos);
+    bool HandleLabels_Circle(const QPoint &pos, const int& numPos);
     void NoteLabels();
     QString Point2Str(const QPoint& pos);
 };
