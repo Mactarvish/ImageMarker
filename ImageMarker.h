@@ -11,6 +11,7 @@
 #include <QMessageBox>
 #include <QVector>
 #include <QPainter>
+#include <QMap>
 
 namespace Ui {
 class Widget;
@@ -32,12 +33,13 @@ protected:
 private:
     Ui::Widget *ui;
     QPixmap* image;
-    QList<QString>* fileNames_ap;
+    //QList<QString>* fileNames_ap;
+    QMap<int, QString> fileNames_ap;
     QString* rootPath;
     QVector<QString> points;
     QVector<QLabel*> coordinates;
     QPainter* painter;
-    const QPixmap* currentPixmap;
+    QPixmap currentPixmap;
     int currentImageIndex;
 
     bool imageChanged;

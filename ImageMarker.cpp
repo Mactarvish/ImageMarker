@@ -6,13 +6,13 @@ Widget::Widget(QWidget *parent) :
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
-    ui->label_big->setMouseTracking(true);
+    ui->label_image->setMouseTracking(true);
     //setMouseTracking(true);
-    ui->label_big->installEventFilter(this);
+    ui->label_image->installEventFilter(this);
 
     image = new QPixmap("/home/hdl2/Desktop/Sono_nofolder/158_HAOTINGTING_1_Labeled.jpg");
     painter = new QPainter();
-    fileNames_ap = new QList<QString>();
+    //fileNames_ap = new QList<QString>();
 
     //rootPath = new QString("/home/hdl2/Desktop/Circle_Images/");
     QDir root = QDir("small_images/");
@@ -28,16 +28,24 @@ Widget::Widget(QWidget *parent) :
         if (list[i].fileName().contains(".jpg"))
         {
             //qDebug() << (*fileNames_ap)[i - 2];
-            fileNames_ap->append(root.absolutePath() + "/" + list[i].fileName());
+            int currentImageNum = list[i].fileName().split(".")[0].toInt();
+            qDebug() << currentImageNum;
+            //fileNames_ap->append(root.absolutePath() + "/" + list[i].fileName());
+            fileNames_ap[currentImageNum] = root.absolutePath() + "/" + list[i].fileName();
         }
     }
-    qDebug() << fileNames_ap->size();
+    for (int i = 0; i < fileNames_ap.size(); i++)
+    {
+        qDebug() << fileNames_ap[i];
+    }
+    qDebug() << fileNames_ap.size();
+    currentImageIndex = 0;
     ChangeImages(0);
-    currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
-    ui->lineEdit->setText((*fileNames_ap)[0]);
+    currentPixmap = QPixmap(*(ui->label_image->pixmap()));
+    ui->lineEdit->setText((fileNames_ap)[0]);
     /*
-    ui->label_big->setPixmap(image->copy(279, 115, 815, 597));
-    ui->label_big->resize(image->size());
+    ui->label_image->setPixmap(image->copy(279, 115, 815, 597));
+    ui->label_image->resize(image->size());
 
     QPixmap small_image = image->scaled(image->width() / 5, image->height() / 5);
     ui->label_small->setPixmap(small_image);
@@ -62,37 +70,36 @@ void Widget::keyPressEvent(QKeyEvent *event)
             this->close();
         }
     }
-    static int image_index = 0;
-    if (event->key() == Qt::Key_Right)
+    if (event->key() == Qt::Key_Right | Qt::Key_Left)
     {
-        qDebug() << fileNames_ap->length();
-        if (image_index == fileNames_ap->length() - 1)
+        if (event->key() == Qt::Key_Right)
         {
-            image_index = 0;
+            //qDebug() << fileNames_ap.size();
+            if (currentImageIndex == fileNames_ap.size() - 1)
+            {
+                currentImageIndex = 0;
+            }
+            else
+            {
+                currentImageIndex++;
+            }
         }
-        else
+        if (event->key() == Qt::Key_Left)
         {
-            image_index++;
+            if (currentImageIndex == 0)
+            {
+                currentImageIndex = fileNames_ap.size() - 1;
+            }
+            else
+            {
+                currentImageIndex--;
+            }
+            qDebug() << currentImageIndex;
         }
-        ChangeImages(image_index);
-        delete currentPixmap;
-        currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
+        ChangeImages(currentImageIndex);
+        currentPixmap = QPixmap(*(ui->label_image->pixmap()));
     }
-    if (event->key() == Qt::Key_Left)
-    {
-        if (image_index == 0)
-        {
-            image_index = fileNames_ap->length() - 1;
-        }
-        else
-        {
-            image_index--;
-        }
-        qDebug() << image_index;
-        ChangeImages(image_index);
-        delete currentPixmap;
-        currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
-    }
+    qDebug() << currentImageIndex;
     if (event->key() == Qt::Key_Enter)
     {
         qDebug() << "Warning: Enter event is unsetting.";
@@ -124,7 +131,7 @@ void Widget::keyPressEvent(QKeyEvent *event)
         QFile::rename(filePath, newPath);
     }
     */
-    ui->lineEdit->setText((*fileNames_ap)[image_index]);
+    ui->lineEdit->setText((fileNames_ap)[currentImageIndex]);
 }
 
 void Widget::mouseMoveEvent(QMouseEvent *event)
@@ -134,11 +141,11 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
 
 bool Widget::eventFilter(QObject *target, QEvent *event)
 {
-    if (target == ui->label_big)
+    if (target == ui->label_image)
     {
         static bool drawFinish = true;
         static QPoint beginPoint = QPoint();
-        QPixmap drawedPixmap = *currentPixmap;
+        QPixmap drawedPixmap = currentPixmap;
         if (event->type() == QEvent::MouseMove)
         {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
@@ -154,7 +161,7 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
             {
                 qDebug() << "Drawing Finished.";
             }
-            ui->label_big->setPixmap(drawedPixmap);
+            ui->label_image->setPixmap(drawedPixmap);
         }
         if (event->type() == QEvent::MouseButtonPress)
         {
@@ -162,7 +169,7 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
             drawFinish = !drawFinish;
             if (!drawFinish)
             {
-                //drawedPixmap = QPixmap(*(ui->label_big->pixmap()));
+                //drawedPixmap = QPixmap(*(ui->label_image->pixmap()));
                 beginPoint = mouseEvent->pos();
             }
             // If all points in current image have been noted, change to next image.
@@ -173,8 +180,8 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
             }
             //HandleLabels_Rect(mouseEvent->pos());
             //delete currentPixmap;
-            //currentPixmap = new QPixmap(*(ui->label_big->pixmap()));
-            //currentPixmap = ui->label_big->pixmap();
+            //currentPixmap = new QPixmap(*(ui->label_image->pixmap()));
+            //currentPixmap = ui->label_image->pixmap();
             //qDebug() << currentPixmap;
         }
     }
@@ -195,13 +202,9 @@ bool Widget::CheckIfMarked(const QString &fileName) const
 
 void Widget::ChangeImages(const int &index)
 {
-    QPixmap bigImage = QPixmap((*fileNames_ap)[index]).copy(279, 115, 815, 597);
-    //QPixmap smallImage = bigImage.scaled(bigImage.width() / 3, bigImage.height() / 3);
-
-    //ui->label_small->setPixmap(smallImage);
-    //ui->label_small->resize(smallImage.size());
-    ui->label_big->setPixmap(bigImage);
-    ui->label_big->resize(bigImage.size());
+    QPixmap image = QPixmap(fileNames_ap[index]);
+    ui->label_image->setPixmap(image);
+    ui->label_image->resize(image.size());
 }
 
 // If numPos has been arrived, return true, otherwise return false.
@@ -209,7 +212,7 @@ bool Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
 {
     QString coordinate = Point2Str(pos);
     points.append(coordinate);
-    QLabel* label = new QLabel("<h5><font size=3 color=red>" + coordinate + "</font></h5>", ui->label_big);
+    QLabel* label = new QLabel("<h5><font size=3 color=red>" + coordinate + "</font></h5>", ui->label_image);
     coordinates.append(label);
     label->setMouseTracking(true);
     label->adjustSize();
