@@ -7,42 +7,42 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->label_image->setMouseTracking(true);
-    //setMouseTracking(true);
     ui->label_image->installEventFilter(this);
 
-    image = new QPixmap("/home/hdl2/Desktop/Sono_nofolder/158_HAOTINGTING_1_Labeled.jpg");
+    //image = new QPixmap("/home/hdl2/Desktop/Sono_nofolder/158_HAOTINGTING_1_Labeled.jpg");
     painter = new QPainter();
-    //fileNames_ap = new QList<QString>();
-
-    //rootPath = new QString("/home/hdl2/Desktop/Circle_Images/");
-    QDir root = QDir("small_images/");
-    QFileInfoList list = root.entryInfoList();
     points.resize(0);
     coordinates.resize(0);
 
-    imageChanged = false;
+    //fileNames_ap = new QList<QString>();
+    directory = QString("small_images/");
+    SelectDirectory(directory);
 
-    for (int i = 2; i < list.length(); i++)
-    {
-        //qDebug() << list[i].fileName();
-        if (list[i].fileName().contains(".jpg"))
-        {
-            //qDebug() << (*fileNames_ap)[i - 2];
-            int currentImageNum = list[i].fileName().split(".")[0].toInt();
-            qDebug() << currentImageNum;
-            //fileNames_ap->append(root.absolutePath() + "/" + list[i].fileName());
-            fileNames_ap[currentImageNum] = root.absolutePath() + "/" + list[i].fileName();
-        }
-    }
-    for (int i = 0; i < fileNames_ap.size(); i++)
-    {
-        qDebug() << fileNames_ap[i];
-    }
-    qDebug() << fileNames_ap.size();
-    currentImageIndex = 0;
-    ChangeImages(0);
-    currentPixmap = QPixmap(*(ui->label_image->pixmap()));
-    ui->lineEdit->setText((fileNames_ap)[0]);
+//    QDir root = QDir(directory);
+//    QFileInfoList list = root.entryInfoList();
+//    for (int i = 2; i < list.length(); i++)
+//    {
+//        //qDebug() << list[i].fileName();
+//        if (list[i].fileName().contains(".jpg"))
+//        {
+//            //qDebug() << (*fileNames_ap)[i - 2];
+//            int currentImageNum = list[i].fileName().split(".")[0].toInt();
+//            qDebug() << currentImageNum;
+//            //fileNames_ap->append(root.absolutePath() + "/" + list[i].fileName());
+//            fileNames_ap[currentImageNum] = root.absolutePath() + "/" + list[i].fileName();
+//        }
+//    }
+//    for (int i = 0; i < fileNames_ap.size(); i++)
+//    {
+//        qDebug() << fileNames_ap[i];
+//    }
+//    qDebug() << fileNames_ap.size();
+
+    InitStatus();
+//    currentImageIndex = 0;
+//    ChangeImages(0);
+//    currentPixmap = QPixmap(*(ui->label_image->pixmap()));
+//    ui->lineEdit->setText((fileNames_ap)[0]);
     /*
     ui->label_image->setPixmap(image->copy(279, 115, 815, 597));
     ui->label_image->resize(image->size());
@@ -51,6 +51,7 @@ Widget::Widget(QWidget *parent) :
     ui->label_small->setPixmap(small_image);
     ui->label_small->resize(small_image.size());
     */
+    //QString path = QFileDialog::getOpenFileName(this, tr("Open Image"), ".", tr("Image Files(*.jpg *.png)"));
 }
 
 Widget::~Widget()
@@ -151,7 +152,7 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
             if (!drawFinish)
             {
-                qDebug() << "Keep drawing...";
+                //qDebug() << "Keep drawing...";
                 painter->begin(&drawedPixmap);
                 painter->setPen(QPen(Qt::red, 2, Qt::SolidLine));
                 painter->drawRect(QRect(beginPoint, mouseEvent->pos()));
@@ -159,7 +160,7 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
             }
             else
             {
-                qDebug() << "Drawing Finished.";
+                //qDebug() << "Drawing Finished.";
             }
             ui->label_image->setPixmap(drawedPixmap);
         }
@@ -186,6 +187,14 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
         }
     }
     return QWidget::eventFilter(target, event);
+}
+
+void Widget::InitStatus()
+{
+    currentImageIndex = 0;
+    ChangeImages(0);
+    currentPixmap = QPixmap(*(ui->label_image->pixmap()));
+    ui->lineEdit->setText((fileNames_ap)[0]);
 }
 
 bool Widget::CheckIfMarked(const QString &fileName) const
@@ -259,6 +268,73 @@ QString Widget::Point2Str(const QPoint &pos)
     return QString("(" + QString::number(pos.x()) + "," + QString::number(pos.y()) + ")");
 }
 
+// All images in the folder must be named by 0~size-1 with format jpg.
+void Widget::SelectDirectory(const QString &direct)
+{
+    directory = direct;
+    qDebug() << "current directory is" << directory;
+    //directory = QString("small_images/");
+    QDir root = QDir(directory);
+    QFileInfoList list = root.entryInfoList();
+
+    QStringList jpgNames;
+    for (int i = 2; i < list.length(); i++)
+    {
+        //qDebug() << list[i].fileName();
+        if (list[i].fileName().contains(".jpg"))
+        {
+            jpgNames.append(list[i].fileName());
+        }
+    }
+    for (int i = 0; i < jpgNames.size(); i++)
+    {
+        bool ok = true;
+        int currentImageNum = jpgNames[i].split(".")[0].toInt(&ok);
+        qDebug() << "currentImageNum is" << currentImageNum << "ok is" << ok;
+        assert(ok);
+        fileNames_ap[currentImageNum] = root.absolutePath() + "/" + jpgNames[i];
+        assert(fileNames_ap.contains(0));
+    }
+
+//    for (int i = 2; i < list.length(); i++)
+//    {
+//        //qDebug() << list[i].fileName();
+//        if (list[i].fileName().contains(".jpg"))
+//        {
+//            //qDebug() << (*fileNames_ap)[i - 2];
+//            bool ok = true;
+//            int currentImageNum = list[i].fileName().split(".")[0].toInt(&ok);
+//            qDebug() << "currentImageNum is" << currentImageNum << "ok is" << ok;
+//            //assert(ok);
+//            //fileNames_ap->append(root.absolutePath() + "/" + list[i].fileName());
+//            fileNames_ap[currentImageNum] = root.absolutePath() + "/" + list[i].fileName();
+//        }
+//    }
+
+
+//    for (int i = 0; i < fileNames_ap.size(); i++)
+//    {
+//        qDebug() << fileNames_ap[i];
+//        qDebug() << fileNames_ap.size() << i;
+//    }
+//    qDebug() << fileNames_ap.size();
+}
+
+void Widget::MarkCircle()
+{
+
+}
+
+void Widget::MarkLine()
+{
+
+}
+
+void Widget::MarkOther()
+{
+
+}
+
 MyButton::MyButton(QWidget *parent) : QPushButton(parent)
 {
     signature = new QString("The more things change, the more they stay the same.");
@@ -278,3 +354,15 @@ void MyButton::mouseMoveEvent(QMouseEvent *event)
 
 
 
+
+void Widget::on_button_circle_clicked(bool checked)
+{
+
+}
+
+void Widget::on_button_open_clicked()
+{
+    directory = QFileDialog::getExistingDirectory(this, tr("Select Directory"), ".");
+    SelectDirectory(directory);
+    InitStatus();
+}

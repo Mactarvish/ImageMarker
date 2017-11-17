@@ -11,7 +11,9 @@
 #include <QMessageBox>
 #include <QVector>
 #include <QPainter>
+#include <QFileDialog>
 #include <QMap>
+#include <assert.h>
 
 namespace Ui {
 class Widget;
@@ -41,15 +43,26 @@ private:
     QPainter* painter;
     QPixmap currentPixmap;
     int currentImageIndex;
+    QString directory;
 
     bool imageChanged;
 
-    void ShowAllfiles();
+
+    void InitStatus();
     bool CheckIfMarked(const QString& fileName) const;
     void ChangeImages(const int& index);
     bool HandleLabels_Circle(const QPoint &pos, const int& numPos);
     void NoteLabels();
     QString Point2Str(const QPoint& pos);
+    void SelectDirectory(const QString& direct);
+
+
+private slots:
+    void MarkCircle();
+    void MarkLine();
+    void MarkOther();
+    void on_button_circle_clicked(bool checked);
+    void on_button_open_clicked();
 };
 
 class MyButton : public QPushButton
