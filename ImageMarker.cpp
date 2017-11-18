@@ -15,10 +15,10 @@ Widget::Widget(QWidget *parent) :
     coordinates.resize(0);
 
     //fileNames_ap = new QList<QString>();
-    directory = QString("small_images/");
-    SelectDirectory(directory);
+    //imageFolderDirectory = QDir("/home/hdl2/Desktop/SonoDataset/Images");
+    SelectDirectory(QDir("/home/hdl2/Desktop/SonoDataset/Images"));
 
-//    QDir root = QDir(directory);
+//    QDir root = QDir(imageFolderDirectory);
 //    QFileInfoList list = root.entryInfoList();
 //    for (int i = 2; i < list.length(); i++)
 //    {
@@ -107,37 +107,12 @@ void Widget::keyPressEvent(QKeyEvent *event)
         //imageChanged = true;
     }
 
-
-    /*
-     * For distinguish if an image has been labeled.
-     *
-    //QString& fileName = (*fileNames_ap)[image_index];
-    //QString filePath = *rootPath + fileName;
-
-
-    if (event->key() == Qt::Key_Enter)
-    {
-        QString newPath = QString();
-        if (this->CheckIfMarked(fileName))
-        {
-            fileName = fileName.remove("_Circle");
-        }
-        else
-        {
-            fileName = fileName.insert(fileName.indexOf(".jpg"), "_Circle");
-        }
-        newPath = *rootPath + fileName;
-
-        qDebug() << newPath;
-        QFile::rename(filePath, newPath);
-    }
-    */
     ui->lineEdit->setText((fileNames_ap)[currentImageIndex]);
 }
 
 void Widget::mouseMoveEvent(QMouseEvent *event)
 {
-    qDebug() << event->pos();
+    //qDebug() << event->pos();
 }
 
 bool Widget::eventFilter(QObject *target, QEvent *event)
@@ -221,6 +196,7 @@ bool Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
 {
     QString coordinate = Point2Str(pos);
     points.append(coordinate);
+
     QLabel* label = new QLabel("<h5><font size=3 color=red>" + coordinate + "</font></h5>", ui->label_image);
     coordinates.append(label);
     label->setMouseTracking(true);
@@ -231,7 +207,7 @@ bool Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
 
     if (points.size() == numPos)
     {
-        NoteLabels();
+        NotePoints();
         points.clear();
         foreach(QLabel* label, coordinates)
         {
@@ -246,19 +222,42 @@ bool Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
     }
 }
 
-void Widget::NoteLabels()
+void Widget::NotePoints()
+{
+    QString str_points = "";
+    for (int i = 0; i < points.size(); i++)
+    {
+        str_points.append(points[i] + " ");
+    }
+    qDebug() << "Points string is" << str_points;
+    MarkCurrentImage("points.txt", str_points);
+
+//    //QString fileName = "coordinates.txt";
+//    QString fileName = "rectangle.txt";
+//    QFile file(fileName);
+//    file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
+//    QTextStream in(&file);
+
+//    in << "\n" << ui->lineEdit->text().split("/").last() << " ";
+//    for (int i = 0; i < points.size(); i++)
+//    {
+//        in << points[i] << " ";
+//    }
+//    file.flush();
+//    file.close();
+}
+
+void Widget::MarkCurrentImage(const QString &fileName, const QString &label)
 {
     //QString fileName = "coordinates.txt";
-    QString fileName = "rectangle.txt";
-    QFile file(fileName);
+    QString fileName_ap = labelFolderDirectory.absoluteFilePath(fileName);
+    qDebug() << fileName_ap;
+    QFile file(fileName_ap);
     file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
     QTextStream in(&file);
 
     in << "\n" << ui->lineEdit->text().split("/").last() << " ";
-    for (int i = 0; i < points.size(); i++)
-    {
-        in << points[i] << " ";
-    }
+    in << label << " ";
     file.flush();
     file.close();
 }
@@ -269,13 +268,15 @@ QString Widget::Point2Str(const QPoint &pos)
 }
 
 // All images in the folder must be named by 0~size-1 with format jpg.
-void Widget::SelectDirectory(const QString &direct)
+void Widget::SelectDirectory(QDir direct)
 {
-    directory = direct;
-    qDebug() << "current directory is" << directory;
-    //directory = QString("small_images/");
-    QDir root = QDir(directory);
-    QFileInfoList list = root.entryInfoList();
+    imageFolderDirectory = direct;
+    direct.cd("../Labels");
+    labelFolderDirectory = direct;
+    qDebug() << "current labelFolderDirectory is" << labelFolderDirectory;
+    qDebug() << "current imageFolderDirectory is" << imageFolderDirectory;
+    //imageFolderDirectory = QString("small_images/");
+    QFileInfoList list = imageFolderDirectory.entryInfoList();
 
     QStringList jpgNames;
     for (int i = 2; i < list.length(); i++)
@@ -290,9 +291,9 @@ void Widget::SelectDirectory(const QString &direct)
     {
         bool ok = true;
         int currentImageNum = jpgNames[i].split(".")[0].toInt(&ok);
-        qDebug() << "currentImageNum is" << currentImageNum << "ok is" << ok;
+        //qDebug() << "currentImageNum is" << currentImageNum << "ok is" << ok;
         assert(ok);
-        fileNames_ap[currentImageNum] = root.absolutePath() + "/" + jpgNames[i];
+        fileNames_ap[currentImageNum] = imageFolderDirectory.absoluteFilePath(jpgNames[i]);
         assert(fileNames_ap.contains(0));
     }
 
@@ -355,14 +356,57 @@ void MyButton::mouseMoveEvent(QMouseEvent *event)
 
 
 
-void Widget::on_button_circle_clicked(bool checked)
-{
-
-}
-
 void Widget::on_button_open_clicked()
 {
-    directory = QFileDialog::getExistingDirectory(this, tr("Select Directory"), ".");
-    SelectDirectory(directory);
+    imageFolderDirectory = QFileDialog::getExistingDirectory(this, tr("Select Directory"), ".");
+    SelectDirectory(imageFolderDirectory);
     InitStatus();
+}
+
+void Widget::on_button_circle_clicked()
+{
+//    //QString fileName = "coordinates.txt";
+//    QString fileName = "/home/hdl2/Desktop/SonoDataset/Labels/classify.txt";
+//    QFile file(fileName);
+//    file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
+//    QTextStream in(&file);
+
+//    in << "\n" << ui->lineEdit->text().split("/").last() << " ";
+//    in << "circle";
+//    file.flush();
+//    file.close();
+    MarkCurrentImage("classify.txt", "circle");
+    QApplication::sendEvent(this, new QKeyEvent(QEvent::KeyPress, Qt::Key_Right, 0));
+}
+
+void Widget::on_button_line_clicked()
+{
+//    //QString fileName = "coordinates.txt";
+//    QString fileName = "/home/hdl2/Desktop/SonoDataset/Labels/classify.txt";
+//    QFile file(fileName);
+//    file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
+//    QTextStream in(&file);
+
+//    in << "\n" << ui->lineEdit->text().split("/").last() << " ";
+//    in << "line";
+//    file.flush();
+//    file.close();
+    MarkCurrentImage("classify.txt", "line");
+    QApplication::sendEvent(this, new QKeyEvent(QEvent::KeyPress, Qt::Key_Right, 0));
+}
+
+void Widget::on_button_other_clicked()
+{
+//    //QString fileName = "coordinates.txt";
+//    QString fileName = "/home/hdl2/Desktop/SonoDataset/Labels/classify.txt";
+//    QFile file(fileName);
+//    file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
+//    QTextStream in(&file);
+
+//    in << "\n" << ui->lineEdit->text().split("/").last() << " ";
+//    in << "other";
+//    file.flush();
+//    file.close();
+    MarkCurrentImage("classify.txt", "other");
+    QApplication::sendEvent(this, new QKeyEvent(QEvent::KeyPress, Qt::Key_Right, 0));
 }
