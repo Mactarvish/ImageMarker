@@ -13,6 +13,7 @@ Widget::Widget(QWidget *parent) :
     painter = new QPainter();
     points.resize(0);
     coordinates.resize(0);
+    database = new iVConfDB("SonoDataset");
 
     //fileNames_ap = new QList<QString>();
     //imageFolderDirectory = QDir("/home/hdl2/Desktop/SonoDataset/Images");
@@ -99,6 +100,10 @@ void Widget::keyPressEvent(QKeyEvent *event)
         }
         ChangeImages(currentImageIndex);
         currentPixmap = QPixmap(*(ui->label_image->pixmap()));
+        QSqlRecord record;
+        database->GetLabel(QString::number(currentImageIndex), record);
+        qDebug() << record;
+        ui->lineEdit_P1->setText(record.value(3).toString());
     }
     qDebug() << currentImageIndex;
     if (event->key() == Qt::Key_Enter)
@@ -125,17 +130,13 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
         if (event->type() == QEvent::MouseMove)
         {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-            if (!drawFinish)
+            if (!drawFinish && rectTrace == true)
             {
                 //qDebug() << "Keep drawing...";
                 painter->begin(&drawedPixmap);
                 painter->setPen(QPen(Qt::red, 2, Qt::SolidLine));
                 painter->drawRect(QRect(beginPoint, mouseEvent->pos()));
                 painter->end();
-            }
-            else
-            {
-                //qDebug() << "Drawing Finished.";
             }
             ui->label_image->setPixmap(drawedPixmap);
         }
@@ -149,7 +150,7 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
                 beginPoint = mouseEvent->pos();
             }
             // If all points in current image have been noted, change to next image.
-            if (HandleLabels_Circle(mouseEvent->pos(), 2))
+            if (HandleLabels_Circle(mouseEvent->pos(), 4))
             {
                 // Simulate right key pressing
                 QApplication::sendEvent(this, new QKeyEvent(QEvent::KeyPress, Qt::Key_Right, 0));
@@ -166,6 +167,7 @@ bool Widget::eventFilter(QObject *target, QEvent *event)
 
 void Widget::InitStatus()
 {
+    rectTrace = false;
     currentImageIndex = 0;
     ChangeImages(0);
     currentPixmap = QPixmap(*(ui->label_image->pixmap()));
@@ -195,9 +197,10 @@ void Widget::ChangeImages(const int &index)
 bool Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
 {
     QString coordinate = Point2Str(pos);
-    points.append(coordinate);
+    points.append(pos);
+    //points.append(pos);
 
-    QLabel* label = new QLabel("<h5><font size=3 color=red>" + coordinate + "</font></h5>", ui->label_image);
+    QLabel* label = new QLabel("<h5><font size=2 color=red>" + coordinate + "</font></h5>", ui->label_image);
     coordinates.append(label);
     label->setMouseTracking(true);
     label->adjustSize();
@@ -224,42 +227,53 @@ bool Widget::HandleLabels_Circle(const QPoint &pos, const int& numPos)
 
 void Widget::NotePoints()
 {
-    QString str_points = "";
-    for (int i = 0; i < points.size(); i++)
-    {
-        str_points.append(points[i] + " ");
-    }
-    qDebug() << "Points string is" << str_points;
-    MarkCurrentImage("points.txt", str_points);
-
-//    //QString fileName = "coordinates.txt";
-//    QString fileName = "rectangle.txt";
-//    QFile file(fileName);
-//    file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
-//    QTextStream in(&file);
-
-//    in << "\n" << ui->lineEdit->text().split("/").last() << " ";
+//    QString str_points = "";
 //    for (int i = 0; i < points.size(); i++)
 //    {
-//        in << points[i] << " ";
+//        if (i == points.size() - 1)
+//        {
+//            str_points.append(points[i]);
+//        }
+//        else
+//        {
+//            str_points.append(points[i] + " ");
+//        }
 //    }
-//    file.flush();
-//    file.close();
+//    qDebug() << "Points string is" << str_points;
+    QVector<int> coors;
+    for (int i = 0; i < points.size(); i++)
+    {
+        coors.append(points[i].x());
+        coors.append(points[i].y());
+    }
+    database->AddLabel(QString::number(currentImageIndex), coors);
+
+    //MarkCurrentImage("points.txt", str_points);
 }
 
 void Widget::MarkCurrentImage(const QString &fileName, const QString &label)
 {
-    //QString fileName = "coordinates.txt";
-    QString fileName_ap = labelFolderDirectory.absoluteFilePath(fileName);
-    qDebug() << fileName_ap;
-    QFile file(fileName_ap);
-    file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
-    QTextStream in(&file);
+//    //QString fileName = "coordinates.txt";
+//    QString fileName_ap = labelFolderDirectory.absoluteFilePath(fileName);
+//    qDebug() << fileName_ap;
+//    QFile file(fileName_ap);
+//    file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
+//    QTextStream in(&file);
+//    QString imageName = ui->lineEdit->text().split("/").last();
 
-    in << "\n" << ui->lineEdit->text().split("/").last() << " ";
-    in << label << " ";
-    file.flush();
-    file.close();
+//    in << imageName << " " << label << "\n";
+//    qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << label << imageName;
+//    //in << label << " ";
+//    file.flush();
+//    file.close();
+
+    QVector<int> coors;
+    for (int i = 0; i < points.size(); i++)
+    {
+        coors.append(points[i].x());
+        coors.append(points[i].y());
+    }
+    database->AddLabel(QString::number(currentImageIndex), coors);
 }
 
 QString Widget::Point2Str(const QPoint &pos)
@@ -358,7 +372,8 @@ void MyButton::mouseMoveEvent(QMouseEvent *event)
 
 void Widget::on_button_open_clicked()
 {
-    imageFolderDirectory = QFileDialog::getExistingDirectory(this, tr("Select Directory"), ".");
+    imageFolderDirectory = QFileDialog::getExistingDirectory(this, tr("Select Directory"), "/home/hdl2/Desktop/SonoDataset/");
+    //qDebug() << imageFolderDirectory;
     SelectDirectory(imageFolderDirectory);
     InitStatus();
 }

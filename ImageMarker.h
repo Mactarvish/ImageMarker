@@ -15,6 +15,8 @@
 #include <QMap>
 #include <assert.h>
 
+#include "database.h"
+
 namespace Ui {
 class Widget;
 }
@@ -38,7 +40,8 @@ private:
     //QList<QString>* fileNames_ap;
     QMap<int, QString> fileNames_ap;
     QString* rootPath;
-    QVector<QString> points;
+    QVector<QString> str_points;
+    QVector<QPoint> points;
     QVector<QLabel*> coordinates;
     QPainter* painter;
     QPixmap currentPixmap;
@@ -47,6 +50,8 @@ private:
     QDir labelFolderDirectory;
 
     bool imageChanged;
+    bool rectTrace;
+    iVConfDB* database;
 
 
     void InitStatus();
